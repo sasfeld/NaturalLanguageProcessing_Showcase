@@ -1,8 +1,13 @@
 package de.adesso.nlpshowcase.nlp.external.adapter;
 
+import de.adesso.nlpshowcase.nlp.model.AnnotatedSentences;
+import de.adesso.nlpshowcase.nlp.model.AnnotatedWord;
 import de.adesso.nlpshowcase.nlp.model.NlpResult;
+import edu.stanford.nlp.ling.CoreAnnotations;
+import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.util.CoreMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -11,6 +16,7 @@ import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * Adapter between the showcase project and Stanford Core NLP library.
@@ -21,10 +27,10 @@ import java.util.Properties;
 @Slf4j
 public class StanfordCoreNlpAdapter implements NlpAdapter {
 
-    // Huge German Corpus - for all possible taggers see JAR file stanford-german-2016-01-19-models.jar
+    // Huge German Corpus - for all possible taggers see JAR file stanford-corenlp-3.9.2-models-german.jar
     private static final String GERMAN_PART_OF_SPEECH_MODEL = "edu/stanford/nlp/models/pos-tagger/german/german-hgc.tagger";
-    // Huge German Corpus - for all possible NER classifiers see JAR file stanford-german-2016-01-19-models.jar
-    private static final String GERMAN_NAMED_ENTITY_RECOGNITION_MODEL = "edu/stanford/nlp/models/ner/german.hgc_175m_600.crf.ser.gz";
+    // Huge German Corpus - for all possible NER classifiers see JAR file stanford-corenlp-3.9.2-models-german.jar
+    private static final String GERMAN_NAMED_ENTITY_RECOGNITION_MODEL = "edu/stanford/nlp/models/ner/german.conll.germeval2014.hgc_175m_600.crf.ser.gz";
     // MUC-7 class model - for all possible taggers see JAR file stanford-english-corenlp-2016-01-10-models.jar
     private static final String ENGLISH_NAMED_ENTITY_RECOGNITION_MODEL = "edu/stanford/nlp/models/ner/english.muc.7class.distsim.crf.ser.gz";
     // English POS model - for all possible NER classifiers see JAR file stanford-english-corenlp-2016-01-10-models.jar
@@ -75,18 +81,40 @@ public class StanfordCoreNlpAdapter implements NlpAdapter {
     }
 
     @Override
-    public List<NlpResult> annotate(final String rawText) {
+    public NlpResult annotate(final String rawText) {
         Annotation annotation = new Annotation(rawText);
 
         // executes the NLP pipeline and fills the annotation structure
         germanNlpPipeline.annotate(annotation);
 
-        return mapToNlpResult(annotation);
+        return mapToNlpResult(rawText, annotation);
     }
 
-    private List<NlpResult> mapToNlpResult(Annotation annotation) {
-        NlpResult nlpResult;
+    private NlpResult mapToNlpResult(String rawText, Annotation annotation) {
+        return NlpResult.builder()
+                .rawText(rawText)
+                .annotatedSentences(mapToAnnotatedSentences(annotation.get(CoreAnnotations.SentencesAnnotation.class)))
+                .build();
+    }
 
-        return null;
+    private List<AnnotatedSentences> mapToAnnotatedSentences(List<CoreMap> sentences) {
+        return sentences.stream().map(sentence -> {
+            return AnnotatedSentences.builder()
+                    .annotatedWords(mapToAnnotatedWords(sentence))
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    private List<AnnotatedWord> mapToAnnotatedWords(CoreMap sentence) {
+        List<CoreLabel> tokens = sentence.get(CoreAnnotations.TokensAnnotation.class);
+
+        return tokens.stream().map(token -> {
+            return AnnotatedWord.builder()
+                    .word(token.get(CoreAnnotations.TextAnnotation.class)) // the raw word itself
+                    .partOfSpeechTag(token.get(CoreAnnotations.PartOfSpeechAnnotation.class)) // the POS tag
+                    .namedEntityRecognitionTag(token.get(CoreAnnotations.NamedEntityTagAnnotation.class)) // the POS tag
+                    .build()
+                    ;
+        }).collect(Collectors.toList());
     }
 }

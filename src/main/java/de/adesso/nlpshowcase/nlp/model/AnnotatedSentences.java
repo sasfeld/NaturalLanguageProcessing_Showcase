@@ -12,5 +12,5 @@ import java.util.List;
 @Data
 @Builder
 public class AnnotatedSentences {
-    private List<AnnotatedSentences> annotatedWords;
+    private List<AnnotatedWord> annotatedWords;
 }
