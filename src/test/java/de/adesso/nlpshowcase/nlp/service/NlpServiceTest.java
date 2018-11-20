@@ -12,8 +12,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 
+/**
+ * Tests the {@link NlpService} component using Spring runner.
+ */
 @RunWith(SpringRunner.class)
-@Import(StanfordCoreNlpAdapter.class)
+@Import({StanfordCoreNlpAdapter.class, NlpService.class})
 public class NlpServiceTest {
 
     @Autowired
@@ -33,11 +36,11 @@ public class NlpServiceTest {
         assertThat(nlpResult.getAnnotatedSentences().size()).isEqualTo(1);
 
         AnnotatedSentences firstSentence = nlpResult.getAnnotatedSentences().get(0);
-        assertThat(firstSentence.getAnnotatedWords().size()).isEqualTo(6);
+        assertThat(firstSentence.getAnnotatedWords().size()).isGreaterThan(6);
 
         AnnotatedWord firstWord = firstSentence.getAnnotatedWords().get(0);
         assertThat(firstWord.getWord()).isEqualTo("Berlin");
         assertThat(firstWord.getPartOfSpeechTag()).isEqualTo("NE");
-        assertThat(firstWord.getNamedEntityRecognitionTag()).isEqualTo("I-LOC");
+        assertThat(firstWord.getNamedEntityRecognitionTag()).isEqualTo("LOCATION");
     }
 }

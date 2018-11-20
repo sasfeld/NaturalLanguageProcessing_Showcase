@@ -1,0 +1,44 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Adesso - Natural Language Processing Showcase</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+</head>
+<body>
+
+
+<div>
+    <p>Enter the raw text to be processed.</p>
+
+    <form action="#" th:action="@{/nlp}" th:object="${nlpParams}" method="post">
+        <p>Raw text: <textarea rows="4" cols="50" th:field="*{rawText}"/></p>
+        <p><input type="submit" value="Submit"/> <input type="reset" value="Reset"/></p>
+    </form>
+</div>
+
+<div th:if="${null != nlpResult}" th:object="${nlpResult}">
+    <p th:text="*{rawText}"/>
+
+
+    <div th:each="annotatedSentence : ${nlpResult.annotatedSentences}">
+        <table>
+            <thead>
+            <tr>
+                <th>Word</th>
+                <th>Part-of-Speech-Tag</th>
+                <th>Named-Entity-Tag</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="annotatedWord : ${annotatedSentence.annotatedWords}">
+                <td th:text="${annotatedWord.word}"></td>
+                <td th:text="${annotatedWord.partOfSpeechTag}"></td>
+                <td th:text="${annotatedWord.namedEntityRecognitionTag}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>
